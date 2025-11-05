@@ -2,9 +2,8 @@
 <html lang="en" class="h-full">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale-1.0">
     <title>My Quick Links</title>
-    <!-- Load Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <script>
         tailwind.config = {
@@ -17,7 +16,6 @@
             },
         }
     </script>
-    <!-- Add Font Awesome for icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <style>
         /* Custom scrollbar for a cleaner look */
@@ -40,13 +38,16 @@
 
     <div class="w-full max-w-2xl bg-gray-800 rounded-lg shadow-2xl p-6 md:p-8">
         
-        <!-- Header -->
         <div class="flex items-center justify-between mb-6">
             <h1 class="text-2xl md:text-3xl font-bold text-cyan-400">My Quick Links</h1>
-            <span class="text-xs text-gray-500">Local Storage Mode</span>
+            <div class="flex items-center space-x-4">
+                <button id="download-links-btn" class="text-gray-400 hover:text-white transition duration-200" title="Download links as JSON">
+                    <i class="fas fa-download fa-lg"></i>
+                </button>
+                <span class="text-xs text-gray-500">Local Storage Mode</span>
+            </div>
         </div>
 
-        <!-- Add New Link Form -->
         <form id="add-link-form" class="mb-6 grid grid-cols-1 md:grid-cols-5 gap-3">
             <input type="text" id="link-name" placeholder="Link Name (e.g., Tech Hub)" required class="md:col-span-2 bg-gray-700 text-white border border-gray-600 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
             <input type="url" id="link-url" placeholder="Full URL (e.g., https://...)" required class="md:col-span-2 bg-gray-700 text-white border border-gray-600 rounded-md px-4 py-2 focus:outline-none focus:ring-2 focus:ring-cyan-500" />
@@ -56,9 +57,7 @@
         </form>
         <div id="error-message" class="text-red-400 text-sm mb-4 hidden"></div>
 
-        <!-- Links List -->
         <div class="space-y-3 max-h-96 overflow-y-auto pr-2" id="links-container">
-            <!-- Links will be dynamically inserted here -->
             <div id="loading-spinner" class="flex justify-center items-center h-24">
                 <i class="fas fa-spinner fa-spin fa-2x text-gray-500"></i>
                 <span class="ml-3 text-gray-500">Loading links...</span>
@@ -67,8 +66,7 @@
         
     </div>
 
-    <!-- Simplified JavaScript using localStorage -->
-    <script type"module">
+    <script>
         // --- UI Elements ---
         const addLinkForm = document.getElementById('add-link-form');
         const linkNameInput = document.getElementById('link-name');
@@ -76,6 +74,7 @@
         const linksContainer = document.getElementById('links-container');
         const errorMessage = document.getElementById('error-message');
         const loadingSpinner = document.getElementById('loading-spinner');
+        const downloadBtn = document.getElementById('download-links-btn'); // Get the new button
         
         const STORAGE_KEY = 'my-quick-links';
 
@@ -223,17 +222,51 @@
         }
         
         // --- Expose a custom confirm modal (as window.confirm is blocked) ---
-        // Overwrite window.confirm to use a simple modal
         window.confirm = (message) => {
-            // In a real app, you'd build a custom modal.
-            // For this environment, we'll bypass the check.
-            // NOTE: This is a simplified bypass for this specific environment.
-            // A production app should have a proper modal.
+            // This is a bypass for the iframe environment. 
+            // In a real browser, this would show a native dialog.
             return true; 
         };
 
         // --- Start Application ---
         function initializeApp() {
+            // Add listener for the new download button
+            downloadBtn.addEventListener('click', () => {
+                try {
+                    const links = getLinks(); // Get current links from storage
+                    if (links.length === 0) {
+                        showError("No links to download.");
+                        setTimeout(() => showError(""), 3000); // Clear error after 3s
+                        return;
+                    }
+                    
+                    // Format as a pretty-printed JSON string
+                    const linksJson = JSON.stringify(links, null, 2);
+                    
+                    // Create a Blob (a file-like object)
+                    const blob = new Blob([linksJson], { type: 'application/json' });
+                    
+                    // Create a temporary URL for the Blob
+                    const url = URL.createObjectURL(blob);
+                    
+                    // Create a temporary anchor element to trigger the download
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = 'my-quick-links.json'; // The filename for the download
+                    document.body.appendChild(a); // Add to the page
+                    a.click(); // Programmatically click the link
+                    
+                    // Clean up: remove the anchor and revoke the URL
+                    document.body.removeChild(a);
+                    URL.revokeObjectURL(url);
+                    
+                } catch (error) {
+                    console.error("Error downloading links:", error);
+                    showError("Failed to download links.");
+                }
+            });
+
+            // Load initial data
             const links = getLinks();
             if (links.length === 0) {
                 // If no links exist, add the default one
