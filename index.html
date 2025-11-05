@@ -352,17 +352,7 @@ CSS
 
 
             // --- Load Initial Data ---
-            const links = getLinks();
-            if (links.length === 0) {
-                // If no links exist, add the default one
-                console.log("No links found. Adding default 'Tech Hub' link.");
-                const defaultLink = {
-                    name: "Tech Hub",
-                    url: "https://demo-media-retail-site.pages.dev"
-                };
-                saveLinks([defaultLink]);
-            }
-            // Render whatever is in storage
+            // Render whatever is in storage (which might be null/empty on first load)
             renderLinks();
         }
 
